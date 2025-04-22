@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Firebase credentials (nunca se deben subir)
+firebase-adminsdk.json
+src/main/resources/firebase-adminsdk.json
+.env
+
+# Archivos de prueba o generados
+firebase_b64.txt
+src/main/resources/firebase_b64.txt
