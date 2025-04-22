@@ -9,13 +9,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cats")
-@RequiredArgsConstructor // <-- esto sí genera el constructor necesario
+@RequiredArgsConstructor
 public class CatController {
 
     private final ICatService catService;
 
     @PostMapping
     public CatResponse createCat(@RequestBody CatRequest request) {
+
         return catService.createCat(request);
     }
 
@@ -23,5 +24,6 @@ public class CatController {
     public List<CatResponse> getAllCats() {
         return catService.getAllCats();
     }
+
 
 }
