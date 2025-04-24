@@ -20,7 +20,7 @@ public class User implements Serializable {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "user_id",columnDefinition = "UUID", updatable = false, nullable = false)
+    @Column(name = "user_id", columnDefinition = "UUID", updatable = false, nullable = false)
     @JdbcType(UUIDJdbcType.class)
     private UUID userId;
 
@@ -30,13 +30,13 @@ public class User implements Serializable {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "first_name", length = 50)
+    @Column(name = "first_name", length = 50, nullable = false)
     private String firstName;
 
-    @Column(name = "last_name", length = 50)
+    @Column(name = "last_name", length = 50, nullable = false)
     private String lastName;
 
-    @Column(length = 8, nullable = false)
+    @Column(length = 8)
     private String dni;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -55,19 +55,19 @@ public class User implements Serializable {
     @Column(name = "profile_photo", columnDefinition = "TEXT")
     private String profilePhoto;
 
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "email_verified")
     private Boolean emailVerified;
 
-    @Column(name = "phone_verified", nullable = false)
+    @Column(name = "phone_verified")
     private Boolean phoneVerified;
 
     @Column(name = "dni_url", columnDefinition = "TEXT")
     private String dniUrl;
 
-    @Column(name = "admin_approved", nullable = false)
+    @Column(name = "admin_approved")
     private Boolean adminApproved;
 
-    @Column(nullable = false)
+    @Column
     private Boolean verified;
 
     @Column(name = "created_at", updatable = false)

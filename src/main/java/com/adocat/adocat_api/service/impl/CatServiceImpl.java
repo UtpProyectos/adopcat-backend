@@ -1,7 +1,7 @@
 package com.adocat.adocat_api.service.impl;
 
-import com.adocat.adocat_api.api.dto.request.CatRequest;
-import com.adocat.adocat_api.api.dto.response.CatResponse;
+import com.adocat.adocat_api.api.dto.cat.CatRequest;
+import com.adocat.adocat_api.api.dto.cat.CatResponse;
 import com.adocat.adocat_api.domain.entity.Cat;
 import com.adocat.adocat_api.domain.repository.CatRepository;
 import com.adocat.adocat_api.service.interfaces.ICatService;

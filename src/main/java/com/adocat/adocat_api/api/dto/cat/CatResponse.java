@@ -1,4 +1,4 @@
-package com.adocat.adocat_api.api.dto.response;
+package com.adocat.adocat_api.api.dto.cat;
 
 import lombok.Data;
 

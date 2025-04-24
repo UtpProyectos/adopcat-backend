@@ -1,7 +1,7 @@
 package com.adocat.adocat_api.service.interfaces;
 
-import com.adocat.adocat_api.api.dto.request.CatRequest;
-import com.adocat.adocat_api.api.dto.response.CatResponse;
+import com.adocat.adocat_api.api.dto.cat.CatRequest;
+import com.adocat.adocat_api.api.dto.cat.CatResponse;
 
 import java.util.List;
 
