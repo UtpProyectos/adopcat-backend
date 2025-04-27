@@ -28,10 +28,12 @@ public class GoogleTokenVerifier {
             GoogleIdToken idToken = verifier.verify(idTokenString);
             if (idToken != null) {
                 var payload = idToken.getPayload();
+
                 return new GoogleUser(
                         payload.getEmail(),
                         (String) payload.get("given_name"),
-                        (String) payload.get("family_name")
+                        (String) payload.get("family_name"),
+                        (String) payload.get("picture") //
                 );
             }
             throw new RuntimeException("ID token inválido");
@@ -39,4 +41,5 @@ public class GoogleTokenVerifier {
             throw new RuntimeException("Error al verificar token de Google", e);
         }
     }
+
 }

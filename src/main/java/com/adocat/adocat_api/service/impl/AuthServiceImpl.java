@@ -1,6 +1,7 @@
 package com.adocat.adocat_api.service.impl;
 
 import com.adocat.adocat_api.api.dto.auth.*;
+import com.adocat.adocat_api.api.dto.user.UserResponse;
 import com.adocat.adocat_api.domain.entity.Role;
 import com.adocat.adocat_api.domain.entity.User;
 import com.adocat.adocat_api.domain.repository.RoleRepository;
@@ -11,6 +12,7 @@ import com.adocat.adocat_api.service.interfaces.IAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -34,9 +36,21 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         String token = jwtService.generateToken(user);
-        return new TokenResponse(token);
+        UserResponse userResponse = UserResponse.builder()
+                .userId(user.getUserId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getRoleName())
+                .profilePhoto(user.getProfilePhoto())
+                .verified(user.getVerified())
+                .build();
+
+
+        return new TokenResponse(token, userResponse);
     }
 
+    @Transactional
     @Override
     public TokenResponse authenticateWithGoogle(String idToken) {
         GoogleUser googleUser = googleVerifier.verify(idToken);
@@ -48,8 +62,8 @@ public class AuthServiceImpl implements IAuthService {
 
                     User newUser = User.builder()
                             .email(googleUser.getEmail())
-                            .firstName(googleUser.getGivenName())
-                            .lastName(googleUser.getFamilyName())
+                            .firstName(googleUser.getFirstName())
+                            .lastName(googleUser.getLastName())
                             .enabled(true)
                             .verified(true)
                             .adminApproved(true)
@@ -59,12 +73,28 @@ public class AuthServiceImpl implements IAuthService {
                             .createdAt(LocalDateTime.now())
                             .build();
 
-                    return userRepository.save(newUser);
+                    newUser.setPasswordHash(encoder.encode("dummy-google-pass"));
+                    newUser.setProfilePhoto(googleUser.getPictureUrl());
+                    return userRepository.saveAndFlush(newUser);
                 });
 
         String token = jwtService.generateToken(user);
-        return new TokenResponse(token);
+
+        UserResponse userResponse = UserResponse.builder()
+                .userId(user.getUserId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getRoleName())
+                .profilePhoto(user.getProfilePhoto())
+                .verified(user.getVerified())
+                .build();
+
+
+        return new TokenResponse(token, userResponse);
+
     }
+
 
     @Override
     public TokenResponse register(RegisterRequest request) {
@@ -92,7 +122,19 @@ public class AuthServiceImpl implements IAuthService {
         userRepository.save(newUser);
 
         String token = jwtService.generateToken(newUser);
-        return new TokenResponse(token);
+
+        UserResponse userResponse = UserResponse.builder()
+                .userId(newUser.getUserId())
+                .firstName(newUser.getFirstName())
+                .lastName(newUser.getLastName())
+                .email(newUser.getEmail())
+                .role(newUser.getRole().getRoleName())
+                .profilePhoto(newUser.getProfilePhoto())
+                .verified(newUser.getVerified())
+                .build();
+
+
+        return new TokenResponse(token, userResponse);
     }
 
 }
