@@ -19,9 +19,12 @@ public class JwtService {
     private final SecretKey secretKey;
 
     public JwtService(@Value("${jwt.secret}") String secret) {
+        System.out.println("🧪 JWT_SECRET VALUE: " + secret); // <-- esto sí muestra el valor real
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
+
     public String generateToken(User user) {
+
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("role", user.getRole().getRoleName()) // Ej: ROLE_ADMIN

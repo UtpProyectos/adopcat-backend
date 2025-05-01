@@ -43,9 +43,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         var userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
             var authToken = new UsernamePasswordAuthenticationToken(
-                    userOpt.get(),
+//                    userOpt.get(),
+                    email, // ✅ más seguro y liviano
                     null,
-                    Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role))
+                    Collections.singleton(new SimpleGrantedAuthority(role))
+
             );
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }
