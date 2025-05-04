@@ -8,6 +8,7 @@ import com.adocat.adocat_api.domain.repository.UserRepository;
 import com.adocat.adocat_api.security.GoogleTokenVerifier;
 import com.adocat.adocat_api.security.JwtService;
 import com.adocat.adocat_api.service.interfaces.IAuthService;
+import com.adocat.adocat_api.service.interfaces.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final IAuthService authService;
+    private final IUserService userService;
     private final GoogleTokenVerifier googleTokenVerifier;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -38,5 +40,19 @@ public class AuthController {
     public ResponseEntity<TokenResponse> loginWithGoogle(@RequestBody GoogleAuthRequest request) {
         return ResponseEntity.ok(authService.authenticateWithGoogle(request.getIdToken()));
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@RequestBody   EmailRequest emailRequest) {
+        userService.initiatePasswordReset(emailRequest.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
+
+
 
 }

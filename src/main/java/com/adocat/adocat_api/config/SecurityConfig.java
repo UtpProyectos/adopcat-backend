@@ -2,6 +2,7 @@ package com.adocat.adocat_api.config;
 
 import com.adocat.adocat_api.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +22,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    @Value("${vite.url}")
+    private String viteUrl;
     private final JwtAuthenticationFilter jwtAuthFilter;
 
     @Bean
@@ -31,7 +34,7 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        //.requestMatchers("/api/users/me").authenticated() // común
+                        .requestMatchers("/api/users/me").authenticated() // común
                         .requestMatchers("/api/users/**").hasRole("ADOPTANTE")
                         .requestMatchers("/api/cats/**").hasRole("ADOPTANTE")
                         .anyRequest().authenticated()
@@ -59,6 +62,7 @@ public class SecurityConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins("http://localhost:5173")
+                        //.allowedOrigins(viteUrl)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

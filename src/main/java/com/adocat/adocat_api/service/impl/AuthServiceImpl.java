@@ -2,6 +2,7 @@ package com.adocat.adocat_api.service.impl;
 
 import com.adocat.adocat_api.api.dto.auth.*;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
+import com.adocat.adocat_api.config.MailService;
 import com.adocat.adocat_api.domain.entity.Role;
 import com.adocat.adocat_api.domain.entity.User;
 import com.adocat.adocat_api.domain.repository.RoleRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,8 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleVerifier;
     private final BCryptPasswordEncoder encoder;
+    private final MailService mailService;
+
 
     @Override
     public TokenResponse login(LoginRequest request) {
@@ -50,33 +54,94 @@ public class AuthServiceImpl implements IAuthService {
         return new TokenResponse(token, userResponse);
     }
 
+//    @Transactional
+//    @Override
+//    public TokenResponse authenticateWithGoogle(String idToken) {
+//        GoogleUser googleUser = googleVerifier.verify(idToken);
+//
+//        User user = userRepository.findByEmail(googleUser.getEmail())
+//                .orElseGet(() -> {
+//                    Role role = roleRepository.findByRoleName("ROLE_ADOPTANTE")
+//                            .orElseThrow(() -> new RuntimeException("Rol ROLE_ADOPTANTE no encontrado"));
+//
+//                    User newUser = User.builder()
+//                            .email(googleUser.getEmail())
+//                            .firstName(googleUser.getFirstName())
+//                            .lastName(googleUser.getLastName())
+//                            .enabled(true)
+//                            .verified(true)
+//                            .adminApproved(false)
+//                            .emailVerified(true)
+//                            .phoneVerified(false)
+//                            .role(role)
+//                            .createdAt(LocalDateTime.now())
+//                            .build();
+//
+//                    newUser.setPasswordHash(encoder.encode("dummy-google-pass"));
+//                    newUser.setProfilePhoto(googleUser.getPictureUrl());
+//                    return userRepository.saveAndFlush(newUser);
+//                });
+//
+//        String token = jwtService.generateToken(user);
+//
+//        UserResponse userResponse = UserResponse.builder()
+//                .userId(user.getUserId())
+//                .firstName(user.getFirstName())
+//                .lastName(user.getLastName())
+//                .email(user.getEmail())
+//                .role(user.getRole().getRoleName())
+//                .profilePhoto(user.getProfilePhoto())
+//                .verified(user.getVerified())
+//                .build();
+//
+//
+//        return new TokenResponse(token, userResponse);
+//
+//    }
+
     @Transactional
     @Override
     public TokenResponse authenticateWithGoogle(String idToken) {
         GoogleUser googleUser = googleVerifier.verify(idToken);
 
-        User user = userRepository.findByEmail(googleUser.getEmail())
-                .orElseGet(() -> {
-                    Role role = roleRepository.findByRoleName("ROLE_ADOPTANTE")
-                            .orElseThrow(() -> new RuntimeException("Rol ROLE_ADOPTANTE no encontrado"));
+        // 🔍 Verifica si ya existe
+        User user = userRepository.findByEmail(googleUser.getEmail()).orElse(null);
+        boolean isNewUser = false;
 
-                    User newUser = User.builder()
-                            .email(googleUser.getEmail())
-                            .firstName(googleUser.getFirstName())
-                            .lastName(googleUser.getLastName())
-                            .enabled(true)
-                            .verified(true)
-                            .adminApproved(true)
-                            .emailVerified(true)
-                            .phoneVerified(false)
-                            .role(role)
-                            .createdAt(LocalDateTime.now())
-                            .build();
+        if (user == null) {
+            System.out.println("Usuarios nuevo");
+            Role role = roleRepository.findByRoleName("ROLE_ADOPTANTE")
+                    .orElseThrow(() -> new RuntimeException("Rol ROLE_ADOPTANTE no encontrado"));
 
-                    newUser.setPasswordHash(encoder.encode("dummy-google-pass"));
-                    newUser.setProfilePhoto(googleUser.getPictureUrl());
-                    return userRepository.saveAndFlush(newUser);
-                });
+            user = User.builder()
+                    .email(googleUser.getEmail())
+                    .firstName(googleUser.getFirstName())
+                    .lastName(googleUser.getLastName())
+                    .enabled(true)
+                    .verified(true)
+                    .adminApproved(false)
+                    .emailVerified(true)
+                    .phoneVerified(false)
+                    .role(role)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            user.setPasswordHash(encoder.encode("dummy-google-pass"));
+            user.setProfilePhoto(googleUser.getPictureUrl());
+
+            user = userRepository.saveAndFlush(user);
+            isNewUser = true;
+        }
+
+        // ✅ Solo si es nuevo enviamos correo de bienvenida
+        if (isNewUser) {
+            mailService.sendHtmlEmail(
+                    user.getEmail(),
+                    "¡Bienvenido a AdoptaCat con Google! 🐱",
+                    "welcome",
+                    Map.of("name", user.getFirstName())
+            );
+        }
 
         String token = jwtService.generateToken(user);
 
@@ -90,10 +155,9 @@ public class AuthServiceImpl implements IAuthService {
                 .verified(user.getVerified())
                 .build();
 
-
         return new TokenResponse(token, userResponse);
-
     }
+
 
 
     @Override
@@ -133,6 +197,14 @@ public class AuthServiceImpl implements IAuthService {
                 .verified(newUser.getVerified())
                 .build();
 
+        mailService.sendHtmlEmail(
+                newUser.getEmail(),
+                "¡Bienvenido a AdoptaCat! 🐾",
+                "welcome-email",  // nombre del template
+                Map.of(
+                        "name", newUser.getFirstName()
+                )
+        );
 
         return new TokenResponse(token, userResponse);
     }

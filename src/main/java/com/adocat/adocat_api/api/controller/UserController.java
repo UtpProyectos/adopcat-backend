@@ -1,5 +1,7 @@
 package com.adocat.adocat_api.api.controller;
 
+import com.adocat.adocat_api.api.dto.user.EmailVerificationRequest;
+import com.adocat.adocat_api.api.dto.user.PhoneVerificationRequest;
 import com.adocat.adocat_api.api.dto.user.UserRequest;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
 import com.adocat.adocat_api.service.interfaces.IUserService;
@@ -51,6 +53,52 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserById(id));
+    }
+
+    @PutMapping("/{id}/change-password")
+    @PreAuthorize("#id == principal.userId")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable UUID id,
+            @RequestParam String currentPassword,
+            @RequestParam String newPassword
+    ) {
+
+        userService.changePassword(id, currentPassword, newPassword);
+        return ResponseEntity.ok().build();
+    }
+
+
+
+    //VALIDACION DE NUMERO
+    @PostMapping("/send-phone-verification")
+    public ResponseEntity<Void> sendPhoneVerification(@RequestBody PhoneVerificationRequest request) {
+        userService.sendPhoneVerification(request.getPhoneNumber());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/verify-phone")
+    public ResponseEntity<String> verifyPhone(
+            @PathVariable UUID id,
+            @RequestBody PhoneVerificationRequest request
+    ) {
+        userService.verifyPhoneCode(id, request.getPhoneNumber(), request.getCode());
+        return ResponseEntity.ok("Teléfono verificado correctamente");
+    }
+
+
+    //VALIDACION CORREO
+    @PostMapping("/{id}/verify-email/send")
+        public ResponseEntity<Void> sendEmailVerification(@PathVariable UUID id) {
+        userService.sendEmailVerification(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/verify-email/confirm")
+    public ResponseEntity<String> confirmEmailVerification(
+            @PathVariable UUID id,
+            @RequestBody EmailVerificationRequest request) {
+        userService.confirmEmailVerification(id, request.getCode());
+        return ResponseEntity.ok("Email verificado correctamente");
     }
 
 

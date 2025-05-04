@@ -12,4 +12,13 @@ public interface IUserService {
     UserResponse getCurrentUser();
     UserResponse getUserById(UUID userId);
 
+    void changePassword(UUID userId, String currentPassword, String newPassword);
+    void initiatePasswordReset(String email);
+    void resetPassword(String token, String newPassword);
+
+    void sendPhoneVerification(String phoneNumber);
+    void verifyPhoneCode(UUID userId, String phoneNumber, String code);
+
+    void sendEmailVerification(UUID userId);
+    void confirmEmailVerification(UUID userId, String code) ;
 }

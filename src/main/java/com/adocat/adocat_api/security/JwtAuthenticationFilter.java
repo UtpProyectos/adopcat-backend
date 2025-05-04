@@ -41,10 +41,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String role = jwtService.extractRole(jwt);
 
         var userOpt = userRepository.findByEmail(email);
+        var user = userOpt.get();
         if (userOpt.isPresent()) {
             var authToken = new UsernamePasswordAuthenticationToken(
 //                    userOpt.get(),
-                    email, // ✅ más seguro y liviano
+                    user,
+                   // email, // ✅ más seguro y liviano
                     null,
                     Collections.singleton(new SimpleGrantedAuthority(role))
 

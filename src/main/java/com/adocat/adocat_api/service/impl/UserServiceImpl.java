@@ -2,19 +2,28 @@ package com.adocat.adocat_api.service.impl;
 
 import com.adocat.adocat_api.api.dto.user.UserRequest;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
+import com.adocat.adocat_api.config.MailService;
+import com.adocat.adocat_api.config.TwilioService;
+import com.adocat.adocat_api.domain.entity.PasswordResetToken;
 import com.adocat.adocat_api.domain.entity.User;
+import com.adocat.adocat_api.domain.repository.PasswordResetTokenRepository;
 import com.adocat.adocat_api.domain.repository.UserRepository;
 import com.adocat.adocat_api.service.CloudinaryService;
 import com.adocat.adocat_api.service.interfaces.IUserService;
+import com.google.api.gax.rpc.NotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -22,8 +31,14 @@ import java.util.UUID;
 @Transactional
 public class UserServiceImpl implements IUserService {
 
+    @Value("${vite.url}")
+    private String viteUrl;
     private final UserRepository userRepository;
-    private final CloudinaryService cloudinaryService; // ✅ CAMBIO: ahora usamos CloudinaryService directamente
+    private final CloudinaryService cloudinaryService;
+    private final PasswordResetTokenRepository tokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
+    private final TwilioService twilioService;
 
     @Override
     public UserResponse updateProfile(UUID userId, UserRequest request) {
@@ -93,7 +108,9 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public UserResponse getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user1 = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String email = user1.getEmail();
 
         User user = userRepository.findByEmailWithRole(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
@@ -109,5 +126,126 @@ public class UserServiceImpl implements IUserService {
 
         return toResponse(user);
     }
+
+
+    @Override
+    public void changePassword(UUID userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("La contraseña actual es incorrecta");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Override
+    public void initiatePasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Correo no registrado"));
+
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .userId(user.getUserId())
+                .expiration(LocalDateTime.now().plusMinutes(30))
+                .used(false)
+                .build();
+
+        tokenRepository.save(resetToken);
+
+        mailService.sendHtmlEmail(
+                user.getEmail(),
+                "Restablecer contraseña - AdoCat",
+                "reset-password",
+                Map.of(
+                        "name", user.getFirstName() + " " + user.getLastName(),
+                        "resetLink", viteUrl + "/reset-password?token=" + token
+                )
+        );
+
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new EntityNotFoundException("Token invalido"));
+
+        if (resetToken.getExpiration().isBefore(LocalDateTime.now())) {
+            tokenRepository.delete(resetToken);
+            throw new IllegalArgumentException("El token expiró.");
+        }
+
+
+        User user = userRepository.findById(resetToken.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        tokenRepository.save(resetToken);
+    }
+
+
+    //Verificacion de numero
+    @Override
+    public void sendPhoneVerification(String phoneNumber) {
+        twilioService.sendVerificationCode(phoneNumber);
+    }
+
+    @Override
+    @Transactional
+    public void verifyPhoneCode(UUID userId, String phoneNumber, String code) {
+        boolean isVerified = twilioService.verifyCode(phoneNumber, code);
+
+        if (!isVerified) {
+            throw new IllegalArgumentException("Código incorrecto o expirado.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        user.setPhoneVerified(true);
+        userRepository.save(user);
+    }
+
+    //VERIFICACION MAIL
+    @Override
+    @Transactional
+    public void sendEmailVerification(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        String code = String.format("%06d", new Random().nextInt(999999));
+        user.setEmailVerificationCode(code);
+        userRepository.save(user);
+
+        mailService.sendHtmlEmail(
+                user.getEmail(),
+                "Verifica tu correo - AdoCat",
+                "verify-email",
+                Map.of("name", user.getFirstName(), "code", code)
+        );
+    }
+
+    @Override
+    @Transactional
+    public void confirmEmailVerification(UUID userId, String code) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        if (!code.equals(user.getEmailVerificationCode())) {
+            throw new IllegalArgumentException("Código inválido");
+        }
+        user.setEmailVerified(true);
+        user.setEmailVerificationCode(null);
+        userRepository.save(user);
+    }
+
+
 
 }

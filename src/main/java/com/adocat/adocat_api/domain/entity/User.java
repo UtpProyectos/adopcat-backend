@@ -67,6 +67,10 @@ public class User implements Serializable {
     @Column(name = "admin_approved")
     private Boolean adminApproved;
 
+    @Column(name = "email_verification_code")
+    private String emailVerificationCode;
+
+
     @Column
     private Boolean verified;
 
