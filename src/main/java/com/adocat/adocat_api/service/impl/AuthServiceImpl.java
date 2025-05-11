@@ -200,7 +200,7 @@ public class AuthServiceImpl implements IAuthService {
         mailService.sendHtmlEmail(
                 newUser.getEmail(),
                 "¡Bienvenido a AdoptaCat! 🐾",
-                "welcome-email",  // nombre del template
+                "welcome",  // nombre del template
                 Map.of(
                         "name", newUser.getFirstName()
                 )
