@@ -4,6 +4,7 @@ import com.adocat.adocat_api.api.dto.user.UserRequest;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface IUserService {
@@ -21,4 +22,7 @@ public interface IUserService {
 
     void sendEmailVerification(UUID userId);
     void confirmEmailVerification(UUID userId, String code) ;
+    void updateUserApproval(UUID userId, boolean approve);
+
+    List<UserResponse> getAllUsers();
 }

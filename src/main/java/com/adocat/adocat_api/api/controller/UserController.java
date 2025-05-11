@@ -5,12 +5,15 @@ import com.adocat.adocat_api.api.dto.user.PhoneVerificationRequest;
 import com.adocat.adocat_api.api.dto.user.UserRequest;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
 import com.adocat.adocat_api.service.interfaces.IUserService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -99,6 +102,33 @@ public class UserController {
             @RequestBody EmailVerificationRequest request) {
         userService.confirmEmailVerification(id, request.getCode());
         return ResponseEntity.ok("Email verificado correctamente");
+    }
+
+
+    @PutMapping("/{id}/verify")
+    //@PreAuthorize("hasRole('ADMIN')")  // Solo un ADMIN puede hacer esto
+    public ResponseEntity<String> updateUserApproval(
+            @PathVariable UUID id,
+            @RequestParam("approve") boolean approve) {
+
+        try {
+            userService.updateUserApproval(id, approve); // Llamamos al servicio para aprobar/rechazar
+            String message = approve ? "Usuario aprobado con éxito" : "Usuario rechazado con éxito";
+            return ResponseEntity.ok(message); // Retornamos una respuesta exitosa
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Usuario no encontrado.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Hubo un error al procesar la solicitud.");
+        }
+    }
+
+    @GetMapping
+    //@PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserResponse>> getUsers() {
+        List<UserResponse> users = userService.getAllUsers();  // Llamar al servicio para obtener usuarios
+        return ResponseEntity.ok(users);
     }
 
 

@@ -22,9 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -246,6 +248,38 @@ public class UserServiceImpl implements IUserService {
         userRepository.save(user);
     }
 
+
+    @Override
+    public void updateUserApproval(UUID userId, boolean approve) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        if (approve) {
+            user.setAdminApproved(true); // Aprobar la verificación
+            user.setVerified(true); // Confirmar que está verificado
+            //sendApprovalNotification(user); // Enviar notificación de aprobación
+        } else {
+            user.setAdminApproved(false); // Rechazar la verificación
+            user.setVerified(false); // Marcar como no verificado
+            //sendRejectionNotification(user); // Enviar notificación de rechazo
+        }
+
+        userRepository.save(user);
+    }
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();  // Consulta a la base de datos para obtener todos los usuarios
+        return users.stream()
+                .map(user -> UserResponse.builder()  // Creamos el UserResponse solo con los campos necesarios
+                        .userId(user.getUserId())
+                        .email(user.getEmail())
+                        .emailVerified(user.getEmailVerified())
+                        .dniUrl(user.getDniUrl())
+                        .adminApproved(user.getAdminApproved())
+                        .build())
+                .collect(Collectors.toList());
+    }
 
 
 }
