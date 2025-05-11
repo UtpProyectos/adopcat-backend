@@ -106,7 +106,6 @@ public class UserController {
 
 
     @PutMapping("/{id}/verify")
-    //@PreAuthorize("hasRole('ADMIN')")  // Solo un ADMIN puede hacer esto
     public ResponseEntity<String> updateUserApproval(
             @PathVariable UUID id,
             @RequestParam("approve") boolean approve) {

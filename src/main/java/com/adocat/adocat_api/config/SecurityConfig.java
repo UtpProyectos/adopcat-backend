@@ -35,8 +35,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/users/me").authenticated() // común
-                        .requestMatchers("/api/users/**").hasRole("ADOPTANTE")
-                        .requestMatchers("/api/cats/**").hasRole("ADOPTANTE")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADOPTANTE","ADMIN")
+                        .requestMatchers("/api/cats/**").hasAnyRole("ADOPTANTE","ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

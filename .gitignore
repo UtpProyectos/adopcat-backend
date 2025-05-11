@@ -1,8 +1,10 @@
 HELP.md
+
+# Build
 target/
+
+# Maven Wrapper
 !.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
 ### STS ###
 .apt_generated
@@ -26,11 +28,10 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
+
 
 # Firebase credentials (nunca se deben subir)
 firebase-adminsdk.json
@@ -40,3 +41,6 @@ src/main/resources/firebase-adminsdk.json
 # Archivos de prueba o generados
 firebase_b64.txt
 src/main/resources/firebase_b64.txt
+
+
+jwt-secret.txt
