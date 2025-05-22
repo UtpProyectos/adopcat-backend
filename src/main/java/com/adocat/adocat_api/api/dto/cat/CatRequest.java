@@ -1,10 +1,36 @@
 package com.adocat.adocat_api.api.dto.cat;
 
-import lombok.Data;
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CatRequest {
+
     private String name;
-    private String age;
+
+    private LocalDate birthDate;
+
     private String gender;
+
+    private String size; // "SMALL", "MEDIUM", "LARGE"
+
+    private String healthStatus;
+
+    private String raza;
+
+    private String description;
+
+    private String location;
+
+    private BigDecimal latitude;
+
+    private BigDecimal longitude;
+
+    private UUID createdBy;
 }
