@@ -8,7 +8,7 @@ import com.adocat.adocat_api.domain.entity.PasswordResetToken;
 import com.adocat.adocat_api.domain.entity.User;
 import com.adocat.adocat_api.domain.repository.PasswordResetTokenRepository;
 import com.adocat.adocat_api.domain.repository.UserRepository;
-import com.adocat.adocat_api.service.CloudinaryService;
+import com.adocat.adocat_api.config.CloudinaryService;
 import com.adocat.adocat_api.service.interfaces.IUserService;
 import com.google.api.gax.rpc.NotFoundException;
 import jakarta.persistence.EntityNotFoundException;

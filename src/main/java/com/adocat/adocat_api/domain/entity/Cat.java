@@ -56,11 +56,15 @@ public class Cat implements Serializable {
     @Column(precision = 10, scale = 6)
     private BigDecimal longitude;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String status; // AVAILABLE, ADOPTED, RESERVED, etc.
+    private CatStatus status;
 
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
+
+    @Column(name = "main_image_url", length = 500)
+    private String mainImageUrl;
 
     // Relaciones con otras entidades
 
@@ -86,4 +90,13 @@ public class Cat implements Serializable {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "adoption_request_id", nullable = true)
     private AdoptionRequest adoptionRequest;
+
+    public enum CatStatus {
+        AVAILABLE, // El gato está disponible para adopción
+        IN_ADOPTION, // El gato está en proceso de adopción
+        ADOPTED,// El gato ya fue adoptado y no está disponible.
+        NOT_AVAILABLE,// NO DISPONIBLE POR ALGUNOS PROBLEMAS DEL GATO
+        SENTO_ORGANIZATION,// GATO ENVIANDO A ORGANIZACION
+    }
+
 }

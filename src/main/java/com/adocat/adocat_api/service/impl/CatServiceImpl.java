@@ -4,6 +4,7 @@ package com.adocat.adocat_api.service.impl;
 import com.adocat.adocat_api.api.dto.cat.CatRequest;
 import com.adocat.adocat_api.api.dto.cat.CatResponse;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
+import com.adocat.adocat_api.config.CloudinaryService;
 import com.adocat.adocat_api.domain.entity.Cat;
 import com.adocat.adocat_api.domain.entity.User;
 import com.adocat.adocat_api.domain.entity.Organization;
@@ -15,7 +16,11 @@ import com.adocat.adocat_api.domain.repository.OrganizationRepository;
 import com.adocat.adocat_api.service.interfaces.ICatService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,14 +34,27 @@ public class CatServiceImpl implements ICatService {
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final AdoptionRequestRepository adoptionRequestRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public List<CatResponse> getAllCats() {
-        return catRepository.findAll()
+        return catRepository.findByStatus(Cat.CatStatus.AVAILABLE)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+    }
+
+
+    @Override
+    public List<CatResponse> getAllCatsByOrganization(UUID organizationId) {
+        return catRepository.findByOrganization_OrganizationId(organizationId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
+
 
     @Override
     public CatResponse getCatById(UUID catId) {
@@ -46,11 +64,43 @@ public class CatServiceImpl implements ICatService {
     }
 
     @Override
-    public CatResponse createCat(CatRequest catRequest) {
+    public CatResponse createCat(CatRequest catRequest, MultipartFile file) {
+        // 1. Subir imagen si llega archivo
+
+        System.out.println(file);
+        if (file != null && !file.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadFile(file, "cats");
+            catRequest.setMainImageUrl(imageUrl);
+        }
+
+        // 2. Mapear entidad
         Cat cat = mapToEntity(catRequest);
+
+        // 3. Validar roles y organización
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isRescatista = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_RESCATISTA"));
+
+        if (catRequest.getOrganizationId() != null) {
+            Organization org = organizationRepository.findById(catRequest.getOrganizationId())
+                    .orElseThrow(() -> new EntityNotFoundException("Organization not found with id " + catRequest.getOrganizationId()));
+            cat.setOrganization(org);
+        } else {
+            if (!isRescatista) {
+                throw new IllegalArgumentException("Solo usuarios con rol RESCATISTA pueden crear gatos sin organización");
+            }
+            cat.setOrganization(null);
+        }
+        cat.setStatus(Cat.CatStatus.AVAILABLE);
+        // 4. Guardar gato
         Cat savedCat = catRepository.save(cat);
+
+        // 5. Devolver respuesta
         return mapToResponse(savedCat);
     }
+
+
 
     @Override
     public CatResponse updateCat(UUID catId, CatRequest catRequest) {
@@ -77,10 +127,6 @@ public class CatServiceImpl implements ICatService {
         } else {
             throw new EntityNotFoundException("createdBy is required");
         }
-
-        // En esta versión NO actualizamos organizationId, sentToOrg, adoptedBy ni adoptionRequestId
-        // Puedes crear endpoints específicos para esos cambios si quieres controlar mejor la lógica
-
         Cat updatedCat = catRepository.save(existingCat);
         return mapToResponse(updatedCat);
     }
@@ -106,8 +152,9 @@ public class CatServiceImpl implements ICatService {
                 .location(cat.getLocation())
                 .latitude(cat.getLatitude())
                 .longitude(cat.getLongitude())
-                .status(cat.getStatus())
+                .status(cat.getStatus() != null ? cat.getStatus().name() : null)
                 .publishedAt(cat.getPublishedAt())
+                .mainImageUrl(cat.getMainImageUrl())
                 .createdBy(mapUserToUserResponse(cat.getCreatedBy()) )
                 .organizationId(cat.getOrganization() != null ? cat.getOrganization().getOrganizationId() : null)
                 .sentToOrg(cat.getSentToOrg() != null ? cat.getSentToOrg().getOrganizationId() : null)
@@ -130,6 +177,8 @@ public class CatServiceImpl implements ICatService {
         cat.setLatitude(dto.getLatitude());
         cat.setLongitude(dto.getLongitude());
 
+        cat.setMainImageUrl(dto.getMainImageUrl());  // <--- importante!
+
         if (dto.getCreatedBy() != null) {
             User user = userRepository.findById(dto.getCreatedBy())
                     .orElseThrow(() -> new EntityNotFoundException("User not found with id " + dto.getCreatedBy()));
@@ -137,12 +186,9 @@ public class CatServiceImpl implements ICatService {
         } else {
             throw new EntityNotFoundException("createdBy is required");
         }
-
-        // Nota: No seteamos organization, sentToOrg, adoptedBy, adoptionRequestId aquí.
-        // Estos se pueden setear en métodos o endpoints específicos para evitar lógica compleja en creación.
-
         return cat;
     }
+
 
 
     private UserResponse mapUserToUserResponse(User user) {

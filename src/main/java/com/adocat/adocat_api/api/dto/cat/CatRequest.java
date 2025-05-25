@@ -32,5 +32,10 @@ public class CatRequest {
 
     private BigDecimal longitude;
 
+    private String mainImageUrl;
+
     private UUID createdBy;
+
+    // Nuevo campo opcional para asignar organización
+    private UUID organizationId;
 }

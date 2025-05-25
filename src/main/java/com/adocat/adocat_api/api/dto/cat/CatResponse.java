@@ -40,6 +40,8 @@ public class CatResponse {
 
     private LocalDateTime publishedAt;
 
+    private String mainImageUrl;
+
     private UserResponse createdBy;
 
     private UUID organizationId;

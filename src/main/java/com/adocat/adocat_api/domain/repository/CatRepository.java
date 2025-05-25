@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface CatRepository extends JpaRepository<Cat, UUID> {
-    List<Cat> findByStatus(String status);
+    List<Cat> findByStatus(Cat.CatStatus status);
     List<Cat> findByOrganization_OrganizationId(UUID organizationId);
+
 }
