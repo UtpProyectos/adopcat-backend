@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -38,4 +39,7 @@ public class CatRequest {
 
     // Nuevo campo opcional para asignar organización
     private UUID organizationId;
+
+
+    private List<CatFeatureRequest> features;
 }

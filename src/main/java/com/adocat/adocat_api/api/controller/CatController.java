@@ -1,7 +1,10 @@
 package com.adocat.adocat_api.api.controller;
 
+import com.adocat.adocat_api.api.dto.cat.CatFeatureResponse;
 import com.adocat.adocat_api.api.dto.cat.CatRequest;
 import com.adocat.adocat_api.api.dto.cat.CatResponse;
+import com.adocat.adocat_api.service.impl.CatFeatureServiceImpl;
+import com.adocat.adocat_api.service.interfaces.ICatFeatureService;
 import com.adocat.adocat_api.service.interfaces.ICatService;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import java.util.UUID;
 public class CatController {
 
     private final ICatService catService;
+    private final ICatFeatureService catFeatureService;
 
     /**
      * Crea un gato. Si no viene organizationId, se valida rol ROLE_RESCATISTA en el servicio.
@@ -65,4 +69,16 @@ public class CatController {
     public void deleteCat(@PathVariable UUID id) {
         catService.deleteCat(id);
     }
+
+    @GetMapping("/{id}/features")
+    public List<com.adocat.adocat_api.api.dto.cat.CatFeatureResponse> getFeaturesByCat(@PathVariable UUID id) throws Exception {
+        return catFeatureService.getFeaturesByCatId(id);
+    }
+
+    @GetMapping("/features")
+    public List<CatFeatureResponse> getAllFeatures() throws Exception {
+        return catFeatureService.getAllFeatures();
+    }
+
+
 }
