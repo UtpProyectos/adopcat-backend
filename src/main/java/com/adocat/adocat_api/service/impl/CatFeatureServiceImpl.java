@@ -64,11 +64,13 @@ public class CatFeatureServiceImpl implements ICatFeatureService {
     @Override
     public List<CatFeatureResponse> getAllFeatures() throws Exception {
         Firestore db = FirestoreClient.getFirestore();
-        CollectionReference featuresRef = db.collection("cats_features");
 
-        ApiFuture<QuerySnapshot> future = featuresRef.get();
+        // Consulta de grupo de subcolecciones "features" en toda la base
+        ApiFuture<QuerySnapshot> future = db.collectionGroup("features").get();
+
         List<QueryDocumentSnapshot> documents = future.get().getDocuments();
 
+        // Extraemos y devolvemos características únicas (por si acaso hay duplicados)
         return documents.stream()
                 .map(doc -> CatFeatureResponse.builder()
                         .id(doc.getId())
@@ -76,7 +78,9 @@ public class CatFeatureServiceImpl implements ICatFeatureService {
                         .createdBy(doc.getString("createdBy"))
                         .createdAt(doc.getString("createdAt"))
                         .build())
+                .distinct() // opcional, si quieres eliminar duplicados
                 .collect(Collectors.toList());
     }
+
 
 }

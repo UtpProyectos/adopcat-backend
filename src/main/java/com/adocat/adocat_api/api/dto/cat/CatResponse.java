@@ -55,5 +55,7 @@ public class CatResponse {
 
     private UUID adoptionRequestId;
 
-    private List<CatFeatureRequest> features;
+    private List<CatFeatureResponse> features;
+
+    private List<CatPhotoResponse> photos;
 }

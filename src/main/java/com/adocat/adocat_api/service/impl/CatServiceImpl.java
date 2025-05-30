@@ -1,8 +1,6 @@
 package com.adocat.adocat_api.service.impl;
 
-import com.adocat.adocat_api.api.dto.cat.CatFeatureRequest;
-import com.adocat.adocat_api.api.dto.cat.CatRequest;
-import com.adocat.adocat_api.api.dto.cat.CatResponse;
+import com.adocat.adocat_api.api.dto.cat.*;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
 import com.adocat.adocat_api.config.CloudinaryService;
 import com.adocat.adocat_api.domain.entity.Cat;
@@ -14,6 +12,8 @@ import com.adocat.adocat_api.domain.repository.UserRepository;
 import com.adocat.adocat_api.domain.repository.OrganizationRepository;
 import com.adocat.adocat_api.service.interfaces.ICatFeatureService;
 import com.adocat.adocat_api.service.interfaces.ICatService;
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.cloud.FirestoreClient;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -22,7 +22,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,6 +39,7 @@ public class CatServiceImpl implements ICatService {
     private final AdoptionRequestRepository adoptionRequestRepository;
     private final CloudinaryService cloudinaryService;
     private final ICatFeatureService catFeatureService;
+    private final CatImageServiceImpl catImageServiceImpl;
 
     @Override
     public List<CatResponse> getAllCats() {
@@ -111,7 +115,13 @@ public class CatServiceImpl implements ICatService {
     }
 
     @Override
-    public CatResponse updateCat(UUID catId, CatRequest catRequest) {
+    public CatResponse updateCat(UUID catId, CatRequest catRequest, MultipartFile file) {
+        // Subir imagen si llega archivo
+        if (file != null && !file.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadFile(file, "cats");
+            catRequest.setMainImageUrl(imageUrl);
+        }
+
         Cat existingCat = catRepository.findById(catId)
                 .orElseThrow(() -> new EntityNotFoundException("Cat not found with id " + catId));
 
@@ -152,7 +162,12 @@ public class CatServiceImpl implements ICatService {
         cat.setLocation(dto.getLocation());
         cat.setLatitude(dto.getLatitude());
         cat.setLongitude(dto.getLongitude());
-        cat.setMainImageUrl(dto.getMainImageUrl());
+
+        // Actualizar mainImageUrl solo si viene no nulo y no vacío
+        if (dto.getMainImageUrl() != null && !dto.getMainImageUrl().isEmpty()) {
+            cat.setMainImageUrl(dto.getMainImageUrl());
+
+        }
 
         if (dto.getCreatedBy() != null) {
             User user = userRepository.findById(dto.getCreatedBy())
@@ -163,6 +178,45 @@ public class CatServiceImpl implements ICatService {
         }
     }
 
+    @Override
+    public String uploadCatPhoto(UUID catId, MultipartFile imageFile) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new IllegalArgumentException("Archivo de imagen vacío");
+        }
+
+        try {
+            // Opcional: eliminar imagen previa o manejar versiones si quieres
+
+            // Carpeta específica para fotos de gatos
+            String folder = "cats/" + catId.toString() + "/photos";
+
+            // Subir la imagen comprimida (Cloudinary comprime automáticamente imágenes)
+            String uploadedUrl = cloudinaryService.uploadFile(imageFile, folder);
+
+            // Guardar URL en Firebase Firestore en subcolección "photos"
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth != null ? auth.getName() : "system";
+
+            Firestore db = FirestoreClient.getFirestore();
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("url", uploadedUrl);
+            data.put("createdBy", username);
+            data.put("createdAt", Instant.now().toString());
+
+            db.collection("cats")
+                    .document(catId.toString())
+                    .collection("photos")
+                    .add(data);  // genera un id automático
+
+            return uploadedUrl;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error subiendo foto del gato: " + e.getMessage(), e);
+        }
+    }
+
+
     // 🔁 Creación
     private Cat mapToEntity(CatRequest dto) {
         Cat cat = new Cat();
@@ -172,16 +226,28 @@ public class CatServiceImpl implements ICatService {
 
     // 🔁 Respuesta
     private CatResponse mapToResponse(Cat cat) {
-        List<CatFeatureRequest> features = null;
+        List<CatFeatureResponse> features = null;
+        List<CatPhotoResponse> photos = null;
+
         try {
             features = catFeatureService.getFeaturesByCatId(cat.getCatId()).stream()
-                    .map(f -> CatFeatureRequest.builder()
+                    .map(f -> CatFeatureResponse.builder()
                             .id(f.getId())
                             .name(f.getName())
+                            .createdBy(f.getCreatedBy())
+                            .createdAt(f.getCreatedAt())
                             .build())
                     .collect(Collectors.toList());
         } catch (Exception e) {
             System.err.println("⚠️ No se pudieron cargar las características de Firebase");
+            e.printStackTrace();
+        }
+
+        try {
+            photos = catImageServiceImpl.getPhotosByCatId(cat.getCatId());
+        } catch (Exception e) {
+            System.err.println("⚠️ No se pudieron cargar las fotos de Firebase");
+            e.printStackTrace();
         }
 
         return CatResponse.builder()
@@ -206,8 +272,10 @@ public class CatServiceImpl implements ICatService {
                 .adoptedAt(cat.getAdoptedAt())
                 .adoptionRequestId(cat.getAdoptionRequest() != null ? cat.getAdoptionRequest().getRequestId() : null)
                 .features(features)
+                .photos(photos)
                 .build();
     }
+
 
     private UserResponse mapUserToUserResponse(User user) {
         if (user == null) return null;

@@ -12,11 +12,13 @@ public interface ICatService {
     List<CatResponse> getAllCats();
     List<CatResponse> getAllCatsByOrganization(UUID organizationId);
 
+    String uploadCatPhoto(UUID catId, MultipartFile imageFile);
+
     CatResponse getCatById(UUID catId);
 
     CatResponse createCat(CatRequest catRequest, MultipartFile file);
 
-    CatResponse updateCat(UUID catId, CatRequest catRequest);
+    CatResponse updateCat(UUID catId, CatRequest catRequest, MultipartFile file);
 
     void deleteCat(UUID catId);
 }

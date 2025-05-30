@@ -14,7 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -59,10 +61,14 @@ public class CatController {
         return catService.getCatById(id);
     }
 
-    @PutMapping("/{id}")
-    public CatResponse updateCat(@PathVariable UUID id, @RequestBody CatRequest request) {
-        return catService.updateCat(id, request);
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CatResponse updateCat(
+            @PathVariable UUID id,
+            @RequestPart("cat") CatRequest request,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
+        return catService.updateCat(id, request, file);
     }
+
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -80,5 +86,14 @@ public class CatController {
         return catFeatureService.getAllFeatures();
     }
 
+    @PostMapping("/{id}/photos")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Map<String, String> uploadCatPhoto(
+            @PathVariable UUID id,
+            @RequestPart("file") MultipartFile file) {
+
+        String uploadedUrl = catService.uploadCatPhoto(id, file);
+        return Collections.singletonMap("url", uploadedUrl);
+    }
 
 }
