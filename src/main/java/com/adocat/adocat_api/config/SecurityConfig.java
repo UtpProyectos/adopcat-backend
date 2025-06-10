@@ -37,6 +37,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/me").authenticated() // común
                         .requestMatchers("/api/users/**").hasAnyRole("ADOPTANTE","ADMIN")
                         .requestMatchers("/api/cats/**").hasAnyRole("ADOPTANTE","ADMIN")
+
+                        // ACCESO TIENDA
+                        .requestMatchers("/api/products").permitAll() // permitir listar
+                        .requestMatchers("/api/products/**").hasRole("ADMIN") // crear, actualizar, eliminar
+                        .requestMatchers("/api/product-categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/product-suppliers/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
