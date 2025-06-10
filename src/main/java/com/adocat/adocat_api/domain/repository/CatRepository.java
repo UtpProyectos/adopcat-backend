@@ -1,5 +1,6 @@
 package com.adocat.adocat_api.domain.repository;
 
+import com.adocat.adocat_api.domain.entity.Adoption;
 import com.adocat.adocat_api.domain.entity.Cat;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -13,6 +14,7 @@ public interface CatRepository extends JpaRepository<Cat, UUID> {
     List<Cat> findByStatus(Cat.CatStatus status);
     List<Cat> findByOrganization_OrganizationId(UUID organizationId);
     Optional<Cat> findById(UUID id);
+    List<Cat> findByAdoptedBy_UserIdAndAdoptionRequest_Status(UUID userId, Adoption.Status status);
 
 
 }

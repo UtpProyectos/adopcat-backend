@@ -4,6 +4,7 @@ import com.adocat.adocat_api.api.dto.cat.*;
 import com.adocat.adocat_api.api.dto.organization.OrganizationResponse;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
 import com.adocat.adocat_api.config.S3Service;
+import com.adocat.adocat_api.domain.entity.Adoption;
 import com.adocat.adocat_api.domain.entity.Cat;
 import com.adocat.adocat_api.domain.entity.User;
 import com.adocat.adocat_api.domain.entity.Organization;
@@ -64,6 +65,15 @@ public class CatServiceImpl implements ICatService {
                 .orElseThrow(() -> new EntityNotFoundException("Cat not found with id " + catId));
         return mapToResponse(cat);
     }
+
+    @Override
+    public List<CatResponse> getCatsAdoptedByUser(UUID userId) {
+        List<Cat> cats = catRepository.findByAdoptedBy_UserIdAndAdoptionRequest_Status(userId, Adoption.Status.DELIVERED);
+
+
+        return cats.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
 
     @Override
     public CatResponse createCat(CatRequest catRequest, MultipartFile file) {

@@ -21,4 +21,7 @@ public interface ICatService {
     CatResponse updateCat(UUID catId, CatRequest catRequest, MultipartFile file);
 
     void deleteCat(UUID catId);
+
+    List<CatResponse> getCatsAdoptedByUser(UUID userId);
+
 }

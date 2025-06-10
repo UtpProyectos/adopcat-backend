@@ -135,4 +135,11 @@ public class CatController {
         return Collections.singletonMap("url", uploadedUrl);
     }
 
+    @GetMapping("/adopted-by-me")
+    public List<CatResponse> getCatsAdoptedByMe(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        return catService.getCatsAdoptedByUser(user.getUserId());
+    }
+
+
 }
