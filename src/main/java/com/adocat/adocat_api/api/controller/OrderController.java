@@ -1,27 +1,45 @@
 package com.adocat.adocat_api.api.controller;
 
-import com.adocat.adocat_api.api.dto.OrderDto;
+import com.adocat.adocat_api.api.dto.request.OrderRequest;
+import com.adocat.adocat_api.api.dto.response.OrderResponse;
 import com.adocat.adocat_api.service.interfaces.OrderService;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/orders")
+@RequiredArgsConstructor
 public class OrderController {
 
-    @Autowired
-    private OrderService service;
+    private final OrderService orderService;
 
-    @GetMapping
-    public List<OrderDto> getAll() {
-        return service.getAllOrders();
+    // 🛒 Crear orden (checkout)
+    @PostMapping
+    public OrderResponse createOrder(@RequestBody OrderRequest request, Authentication authentication) {
+        UUID userId = extractUserId(authentication);
+        return orderService.createOrder(userId, request);
     }
 
-    @PostMapping
-    public OrderDto create(@RequestBody OrderDto dto) {
-        return service.createOrder(dto);
+    // 📦 Listar órdenes del usuario logueado
+    @GetMapping
+    public List<OrderResponse> getUserOrders(Authentication authentication) {
+        UUID userId = extractUserId(authentication);
+        return orderService.getOrdersByUser(userId);
+    }
+
+    // 🔍 Obtener una orden por su ID
+    @GetMapping("/{id}")
+    public OrderResponse getOrder(@PathVariable UUID id) {
+        return orderService.getOrderById(id);
+    }
+
+    // Método auxiliar para extraer el userId del principal (token)
+    private UUID extractUserId(Authentication authentication) {
+        // 👇 Asumiendo que usas UUID como username (puedes adaptar si usas email)
+        return UUID.fromString(authentication.getName());
     }
 }
