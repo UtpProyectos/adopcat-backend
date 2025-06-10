@@ -27,4 +27,6 @@ public interface IUserService {
     List<UserResponse> getAllUsers();
     UserResponse createAdmin(String firstName, String lastName, String email, String password);
     void updateUserEnabled(UUID userId, boolean enabled);
+    List<UserResponse> searchUsers(String query);
+
 }

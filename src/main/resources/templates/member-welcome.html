@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bienvenido a Adocat</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f9fafb;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    }
+    .logo {
+      text-align: center;
+    }
+    .logo img {
+      max-width: 80px;
+    }
+    .title {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 24px;
+      color: #fd7e14;
+    }
+    .message {
+      margin-top: 20px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 13px;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <img src="https://522be53908.imgdist.com/pub/bfra/80lu5gnp/y7i/plh/ki9/icon-adocat.png" alt="Adocat Logo">
+  </div>
+  <div class="title">¡Bienvenido a Adocat!</div>
+
+  <div class="message">
+    <p>Hola <span th:text="${name}">[Nombre]</span>,</p>
+    <p>Te damos la bienvenida como nuevo miembro de la organización <strong><span th:text="${orgName}">[Nombre de organización]</span></strong>.</p>
+    <p>Agradecemos tu compromiso con el bienestar felino. Desde hoy podrás colaborar en la gestión de gatos, adopciones y muchas actividades más dentro de Adocat.</p>
+    <p>Si tienes dudas o necesitas ayuda, no dudes en contactarnos.</p>
+    <p>¡Gracias por ser parte de este proyecto!</p>
+  </div>
+
+  <div class="footer">
+    Plataforma Adocat · Lima, Perú · adocat@adocat.com
+  </div>
+</div>
+</body>
+</html>

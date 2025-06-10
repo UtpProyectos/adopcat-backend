@@ -313,5 +313,19 @@ public class UserServiceImpl implements IUserService {
     }
 
 
+    @Override
+    public List<UserResponse> searchUsers(String query) {
+        return userRepository.findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(query, query, query)
+                .stream()
+                .map(user -> UserResponse.builder()
+                        .userId(user.getUserId())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .profilePhoto(user.getProfilePhoto())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
 
 }

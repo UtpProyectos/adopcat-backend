@@ -11,5 +11,4 @@ import java.util.UUID;
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, UUID> {
     List<Organization> findByCreatedByUserId(UUID userId);
-
 }

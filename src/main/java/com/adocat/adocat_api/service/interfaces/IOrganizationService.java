@@ -27,4 +27,5 @@ public interface IOrganizationService {
 
     OrganizationResponse updateOrganizationApprovalStatusAndState(UUID organizationId, Boolean verified, Organization.OrganizationStatus status, Boolean active);
 
+    List<OrganizationResponse> getOrganizationsWhereUserIsMemberOrCreator(UUID userId);
 }

@@ -22,9 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -226,6 +226,30 @@ public class OrganizationServiceImpl implements IOrganizationService {
         org = organizationRepository.save(org);
         return mapEntityToResponse(org);
     }
+
+
+    @Override
+    public List<OrganizationResponse> getOrganizationsWhereUserIsMemberOrCreator(UUID userId) {
+        List<UUID> orgIds = organizationMemberRepository
+                .findByUserIdAndActiveTrueAndApprovedTrue(userId)
+                .stream()
+                .map(OrganizationMember::getOrganizationId)
+                .collect(Collectors.toList());
+
+        List<Organization> memberOrganizations = new ArrayList<>(organizationRepository.findAllById(orgIds));
+        List<Organization> createdOrganizations = new ArrayList<>(organizationRepository.findByCreatedByUserId(userId));
+
+        Set<UUID> seen = new HashSet<>();
+        List<OrganizationResponse> combined = new ArrayList<>();
+
+        Stream.concat(memberOrganizations.stream(), createdOrganizations.stream())
+                .filter(org -> seen.add(org.getOrganizationId())) // filtrar duplicados por ID
+                .map(this::mapEntityToResponse)
+                .forEach(combined::add);
+
+        return combined;
+    }
+
 
     private UserResponse mapUserToUserResponse(User user) {
         if (user == null) return null;

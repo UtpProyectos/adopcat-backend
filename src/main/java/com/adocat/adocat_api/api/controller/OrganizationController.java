@@ -121,4 +121,12 @@ public class OrganizationController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
+
+    @GetMapping("/my-organizations/{userId}")
+    public ResponseEntity<List<OrganizationResponse>> getMyOrganizations(@PathVariable UUID userId) {
+        return ResponseEntity.ok(organizationService.getOrganizationsWhereUserIsMemberOrCreator(userId));
+    }
+
+
 }

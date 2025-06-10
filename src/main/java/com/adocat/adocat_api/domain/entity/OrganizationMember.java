@@ -30,6 +30,10 @@ public class OrganizationMember {
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", insertable = false, updatable = false)
+    private Organization organization;
+
     @Column(name = "role_in_org")
     private String roleInOrg;
 

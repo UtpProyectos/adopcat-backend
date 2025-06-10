@@ -151,6 +151,14 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<UserResponse>> searchUsers(
+            @RequestParam("query") String query
+    ) {
+        List<UserResponse> results = userService.searchUsers(query);
+        return ResponseEntity.ok(results);
+    }
+
 
 
 }
