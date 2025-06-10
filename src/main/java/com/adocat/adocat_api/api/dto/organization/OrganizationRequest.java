@@ -19,4 +19,6 @@ public class OrganizationRequest {
     private BigDecimal latitude;
     private BigDecimal longitude;
     private MultipartFile coverPhoto;
+    private String coverPhotoUrl; // opcional, para indicar si se elimina
+
 }

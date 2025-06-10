@@ -84,7 +84,13 @@ public class OrganizationServiceImpl implements IOrganizationService {
         Organization org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new EntityNotFoundException("Organization not found"));
 
-        // Reemplazar la imagen si se sube una nueva
+        // Eliminar imagen si el frontend indica "null" explícito
+        if ("null".equalsIgnoreCase(request.getCoverPhotoUrl()) && org.getCoverPhotoUrl() != null) {
+            s3Service.deleteByUrl(org.getCoverPhotoUrl());
+            org.setCoverPhotoUrl(null);
+        }
+
+        // Reemplazar si se sube nueva imagen
         if (request.getCoverPhoto() != null && !request.getCoverPhoto().isEmpty()) {
             if (org.getCoverPhotoUrl() != null) {
                 s3Service.deleteByUrl(org.getCoverPhotoUrl());
@@ -106,6 +112,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
         org = organizationRepository.save(org);
         return mapEntityToResponse(org);
     }
+
 
 
     @Override
