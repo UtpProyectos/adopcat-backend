@@ -3,6 +3,7 @@ package com.adocat.adocat_api.api.dto.organization;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 
@@ -17,4 +18,5 @@ public class OrganizationRequest {
     private String address;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private MultipartFile coverPhoto;
 }

@@ -3,6 +3,7 @@ package com.adocat.adocat_api.service.impl;
 import com.adocat.adocat_api.api.dto.organization.OrganizationRequest;
 import com.adocat.adocat_api.api.dto.organization.OrganizationResponse;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
+import com.adocat.adocat_api.config.S3Service;
 import com.adocat.adocat_api.domain.entity.Organization;
 import com.adocat.adocat_api.domain.entity.OrganizationMember;
 import com.adocat.adocat_api.domain.entity.User;
@@ -34,6 +35,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
     private final UserRepository userRepository; // Para buscar usuario creado por
     private final OrganizationMemberRepository organizationMemberRepository;
     private final OrganizationAccessService organizationAccessService;
+    private final S3Service s3Service;
 
     @Override
     public OrganizationResponse createOrganization(OrganizationRequest request) {
@@ -73,7 +75,6 @@ public class OrganizationServiceImpl implements IOrganizationService {
 
     @Override
     public OrganizationResponse updateOrganization(UUID organizationId, OrganizationRequest request) {
-
         User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (!organizationAccessService.isOwnerOrAdmin(organizationId, currentUser)) {
@@ -83,7 +84,17 @@ public class OrganizationServiceImpl implements IOrganizationService {
         Organization org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new EntityNotFoundException("Organization not found"));
 
-        // Actualizar campos editables
+        // Reemplazar la imagen si se sube una nueva
+        if (request.getCoverPhoto() != null && !request.getCoverPhoto().isEmpty()) {
+            if (org.getCoverPhotoUrl() != null) {
+                s3Service.deleteByUrl(org.getCoverPhotoUrl());
+            }
+
+            String newUrl = s3Service.uploadFile(request.getCoverPhoto(), "organizations");
+            org.setCoverPhotoUrl(newUrl);
+        }
+
+        // Actualizar campos
         org.setName(request.getName());
         org.setRuc(request.getRuc());
         org.setDescription(request.getDescription());
@@ -95,6 +106,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
         org = organizationRepository.save(org);
         return mapEntityToResponse(org);
     }
+
 
     @Override
     public void deleteOrganization(UUID organizationId) {

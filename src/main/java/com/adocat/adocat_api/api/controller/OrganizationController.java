@@ -34,11 +34,15 @@ public class OrganizationController {
     @PutMapping("/{id}")
     public ResponseEntity<OrganizationResponse> updateOrganization(
             @PathVariable UUID id,
-            @RequestBody OrganizationRequest request
+            @ModelAttribute OrganizationRequest request,
+            Authentication auth
     ) {
-        OrganizationResponse response = organizationService.updateOrganization(id, request);
-        return ResponseEntity.ok(response);
+        User user = (User) auth.getPrincipal();
+        organizationAccessService.isMemberOrOwner(id, user);
+
+        return ResponseEntity.ok(organizationService.updateOrganization(id, request));
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrganization(@PathVariable UUID id) {
