@@ -25,4 +25,6 @@ public interface IUserService {
     void updateUserApproval(UUID userId, boolean approve);
 
     List<UserResponse> getAllUsers();
+    UserResponse createAdmin(String firstName, String lastName, String email, String password);
+    void updateUserEnabled(UUID userId, boolean enabled);
 }

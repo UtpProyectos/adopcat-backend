@@ -16,5 +16,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u FROM users u JOIN FETCH u.role WHERE u.userId = :userId")
     Optional<User> findByIdWithRole(@Param("userId") UUID userId);
 
+    boolean existsByEmail(String email);
 
 }

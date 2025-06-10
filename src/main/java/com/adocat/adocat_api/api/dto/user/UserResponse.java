@@ -15,7 +15,7 @@ public class UserResponse {
     private String role;
     private String profilePhoto;
     private Boolean verified;
-
+    private Boolean enabled;
     private String dni;
     private String phoneNumber;
     private String address;

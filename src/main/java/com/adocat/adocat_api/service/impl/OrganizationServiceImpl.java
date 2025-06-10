@@ -4,9 +4,12 @@ import com.adocat.adocat_api.api.dto.organization.OrganizationRequest;
 import com.adocat.adocat_api.api.dto.organization.OrganizationResponse;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
 import com.adocat.adocat_api.domain.entity.Organization;
+import com.adocat.adocat_api.domain.entity.OrganizationMember;
 import com.adocat.adocat_api.domain.entity.User;
+import com.adocat.adocat_api.domain.repository.OrganizationMemberRepository;
 import com.adocat.adocat_api.domain.repository.OrganizationRepository;
 import com.adocat.adocat_api.domain.repository.UserRepository;
+import com.adocat.adocat_api.security.OrganizationAccessService;
 import com.adocat.adocat_api.service.interfaces.IOrganizationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +18,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.security.access.AccessDeniedException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +32,8 @@ public class OrganizationServiceImpl implements IOrganizationService {
 
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository; // Para buscar usuario creado por
+    private final OrganizationMemberRepository organizationMemberRepository;
+    private final OrganizationAccessService organizationAccessService;
 
     @Override
     public OrganizationResponse createOrganization(OrganizationRequest request) {
@@ -47,12 +53,33 @@ public class OrganizationServiceImpl implements IOrganizationService {
         org.setCreatedBy(user);
 
         org = organizationRepository.save(org);
+
+        // Crear al usuario como OWNER en organization_members
+        OrganizationMember owner = OrganizationMember.builder()
+                .organizationId(org.getOrganizationId())
+                .userId(user.getUserId())
+                .roleInOrg("OWNER")
+                .approved(true)
+                .active(true)
+                .joinedAt(new Timestamp(System.currentTimeMillis()))
+                .build();
+        organizationMemberRepository.save(owner);
+
         return mapEntityToResponse(org);
+
+
     }
 
 
     @Override
     public OrganizationResponse updateOrganization(UUID organizationId, OrganizationRequest request) {
+
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (!organizationAccessService.isOwnerOrAdmin(organizationId, currentUser)) {
+            throw new AccessDeniedException("No tienes permiso para modificar esta organización");
+        }
+
         Organization org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new EntityNotFoundException("Organization not found"));
 
@@ -91,6 +118,15 @@ public class OrganizationServiceImpl implements IOrganizationService {
                 .map(this::mapEntityToResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<OrganizationResponse> getOrganizationsByUserId(UUID userId) {
+        List<Organization> organizations = organizationRepository.findByCreatedByUserId(userId);
+        return organizations.stream()
+                .map(this::mapEntityToResponse)
+                .collect(Collectors.toList());
+    }
+
 
     // --- Mappers manuales ---
     private OrganizationResponse mapEntityToResponse(Organization org) {

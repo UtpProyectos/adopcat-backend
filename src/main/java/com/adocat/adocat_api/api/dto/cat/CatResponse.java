@@ -1,6 +1,8 @@
 package com.adocat.adocat_api.api.dto.cat;
 
+import com.adocat.adocat_api.api.dto.organization.OrganizationResponse;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
+import com.adocat.adocat_api.domain.entity.Organization;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -45,7 +47,7 @@ public class CatResponse {
 
     private UserResponse createdBy;
 
-    private UUID organizationId;
+    private OrganizationResponse organization;
 
     private UUID sentToOrg;
 

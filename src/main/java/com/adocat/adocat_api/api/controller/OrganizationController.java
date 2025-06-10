@@ -3,12 +3,15 @@ package com.adocat.adocat_api.api.controller;
 import com.adocat.adocat_api.api.dto.organization.OrganizationRequest;
 import com.adocat.adocat_api.api.dto.organization.OrganizationResponse;
 import com.adocat.adocat_api.domain.entity.Organization;
+import com.adocat.adocat_api.domain.entity.User;
+import com.adocat.adocat_api.security.OrganizationAccessService;
 import com.adocat.adocat_api.service.interfaces.IOrganizationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +23,7 @@ import java.util.UUID;
 public class OrganizationController {
 
     private final IOrganizationService organizationService;
+    private final OrganizationAccessService organizationAccessService;
 
     @PostMapping
     public ResponseEntity<OrganizationResponse> createOrganization(@RequestBody OrganizationRequest request) {
@@ -43,16 +47,29 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrganizationResponse> getOrganizationById(@PathVariable UUID id) {
+    public ResponseEntity<OrganizationResponse> getOrganizationById(
+            @PathVariable UUID id,
+            Authentication auth
+    ) {
+        User user = (User) auth.getPrincipal();
+         organizationAccessService.isMemberOrOwner(id, user);
+
         OrganizationResponse response = organizationService.getOrganizationById(id);
         return ResponseEntity.ok(response);
     }
+
 
     @GetMapping
     public ResponseEntity<List<OrganizationResponse>> getAllOrganizations() {
         List<OrganizationResponse> organizations = organizationService.getAllOrganizations();
         return ResponseEntity.ok(organizations);
     }
+
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<List<OrganizationResponse>> getByUser(@PathVariable UUID userId) {
+        return ResponseEntity.ok(organizationService.getOrganizationsByUserId(userId));
+    }
+
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")

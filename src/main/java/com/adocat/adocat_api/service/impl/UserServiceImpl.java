@@ -7,10 +7,10 @@ import com.adocat.adocat_api.config.TwilioService;
 import com.adocat.adocat_api.domain.entity.PasswordResetToken;
 import com.adocat.adocat_api.domain.entity.User;
 import com.adocat.adocat_api.domain.repository.PasswordResetTokenRepository;
+import com.adocat.adocat_api.domain.repository.RoleRepository;
 import com.adocat.adocat_api.domain.repository.UserRepository;
-import com.adocat.adocat_api.config.CloudinaryService;
+import com.adocat.adocat_api.config.S3Service;
 import com.adocat.adocat_api.service.interfaces.IUserService;
-import com.google.api.gax.rpc.NotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,10 +33,11 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserServiceImpl implements IUserService {
 
+    private final RoleRepository roleRepository;
     @Value("${vite.url}")
     private String viteUrl;
     private final UserRepository userRepository;
-    private final CloudinaryService cloudinaryService;
+    private final S3Service s3Service;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
@@ -75,10 +76,10 @@ public class UserServiceImpl implements IUserService {
                     .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
             if (user.getDniUrl() != null) {
-                cloudinaryService.deleteByUrl(user.getDniUrl());
+                s3Service.deleteByUrl(user.getDniUrl());
             }
 
-            String uploadedUrl = cloudinaryService.uploadFile(dniFile, "users/" + userId);
+            String uploadedUrl = s3Service.uploadFile(dniFile, "users/" + userId);
             user.setDniUrl(uploadedUrl);
 
             return toResponse(userRepository.save(user));
@@ -94,6 +95,7 @@ public class UserServiceImpl implements IUserService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
+                .enabled(user.getEnabled())
                 .role(user.getRole().getRoleName())
                 .profilePhoto(user.getProfilePhoto())
                 .verified(user.getVerified())
@@ -269,17 +271,47 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public List<UserResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();  // Consulta a la base de datos para obtener todos los usuarios
+        List<User> users = userRepository.findAll();
         return users.stream()
-                .map(user -> UserResponse.builder()  // Creamos el UserResponse solo con los campos necesarios
-                        .userId(user.getUserId())
-                        .email(user.getEmail())
-                        .emailVerified(user.getEmailVerified())
-                        .dniUrl(user.getDniUrl())
-                        .adminApproved(user.getAdminApproved())
-                        .build())
+                .map(this::toResponse)
                 .collect(Collectors.toList());
     }
+
+
+    @Override
+    public UserResponse createAdmin(String firstName, String lastName, String email, String password) {
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("El correo ya está registrado");
+        }
+
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(password));
+        user.setRole(roleRepository.findByRoleName("ROLE_ADMIN").orElseThrow());
+        user.setEnabled(true);
+        user.setVerified(true);
+        user.setEmailVerified(true);
+        user.setPhoneVerified(true);
+        user.setAdminApproved(true);
+
+        return toResponse(userRepository.save(user));
+    }
+
+    @Override
+    public void updateUserEnabled(UUID userId, boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        if (!user.getRole().getRoleName().equals("ROLE_ADMIN")) {
+            throw new IllegalStateException("Solo se puede activar/desactivar a administradores");
+        }
+
+        user.setEnabled(enabled);
+        userRepository.save(user);
+    }
+
 
 
 }

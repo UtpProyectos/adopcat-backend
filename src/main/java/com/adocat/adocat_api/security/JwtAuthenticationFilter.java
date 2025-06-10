@@ -43,6 +43,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         var userOpt = userRepository.findByEmail(email);
         var user = userOpt.get();
         if (userOpt.isPresent()) {
+
+            if (!user.getEnabled()) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Cuenta desactivada. Contacta al administrador.");
+                return;
+            }
             var authToken = new UsernamePasswordAuthenticationToken(
 //                    userOpt.get(),
                     user,

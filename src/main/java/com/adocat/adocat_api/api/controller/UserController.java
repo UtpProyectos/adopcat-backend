@@ -1,5 +1,6 @@
 package com.adocat.adocat_api.api.controller;
 
+import com.adocat.adocat_api.api.dto.auth.RegisterRequest;
 import com.adocat.adocat_api.api.dto.user.EmailVerificationRequest;
 import com.adocat.adocat_api.api.dto.user.PhoneVerificationRequest;
 import com.adocat.adocat_api.api.dto.user.UserRequest;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -129,6 +131,26 @@ public class UserController {
         List<UserResponse> users = userService.getAllUsers();  // Llamar al servicio para obtener usuarios
         return ResponseEntity.ok(users);
     }
+
+    @PostMapping("/admin")
+    public ResponseEntity<UserResponse> createAdmin(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(userService.createAdmin(
+                request.getFirstName(),
+                request.getLastName(),
+                request.getEmail(),
+                request.getPassword()
+        ));
+    }
+
+
+    @PutMapping("/{userId}/enabled")
+    public ResponseEntity<Void> updateUserEnabled(
+            @PathVariable UUID userId,
+            @RequestParam boolean enabled) {
+        userService.updateUserEnabled(userId, enabled);
+        return ResponseEntity.noContent().build();
+    }
+
 
 
 }

@@ -32,8 +32,13 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public TokenResponse login(LoginRequest request) {
+
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!user.getEnabled()) {
+            throw new RuntimeException("Tu cuenta ha sido desactivada. Contacta al administrador.");
+        }
 
         if (!encoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Credenciales incorrectas");
@@ -54,50 +59,6 @@ public class AuthServiceImpl implements IAuthService {
         return new TokenResponse(token, userResponse);
     }
 
-//    @Transactional
-//    @Override
-//    public TokenResponse authenticateWithGoogle(String idToken) {
-//        GoogleUser googleUser = googleVerifier.verify(idToken);
-//
-//        User user = userRepository.findByEmail(googleUser.getEmail())
-//                .orElseGet(() -> {
-//                    Role role = roleRepository.findByRoleName("ROLE_ADOPTANTE")
-//                            .orElseThrow(() -> new RuntimeException("Rol ROLE_ADOPTANTE no encontrado"));
-//
-//                    User newUser = User.builder()
-//                            .email(googleUser.getEmail())
-//                            .firstName(googleUser.getFirstName())
-//                            .lastName(googleUser.getLastName())
-//                            .enabled(true)
-//                            .verified(true)
-//                            .adminApproved(false)
-//                            .emailVerified(true)
-//                            .phoneVerified(false)
-//                            .role(role)
-//                            .createdAt(LocalDateTime.now())
-//                            .build();
-//
-//                    newUser.setPasswordHash(encoder.encode("dummy-google-pass"));
-//                    newUser.setProfilePhoto(googleUser.getPictureUrl());
-//                    return userRepository.saveAndFlush(newUser);
-//                });
-//
-//        String token = jwtService.generateToken(user);
-//
-//        UserResponse userResponse = UserResponse.builder()
-//                .userId(user.getUserId())
-//                .firstName(user.getFirstName())
-//                .lastName(user.getLastName())
-//                .email(user.getEmail())
-//                .role(user.getRole().getRoleName())
-//                .profilePhoto(user.getProfilePhoto())
-//                .verified(user.getVerified())
-//                .build();
-//
-//
-//        return new TokenResponse(token, userResponse);
-//
-//    }
 
     @Transactional
     @Override
@@ -106,6 +67,12 @@ public class AuthServiceImpl implements IAuthService {
 
         // 🔍 Verifica si ya existe
         User user = userRepository.findByEmail(googleUser.getEmail()).orElse(null);
+
+        if (user != null && !user.getEnabled()) {
+            throw new RuntimeException("Tu cuenta ha sido desactivada. Contacta al administrador.");
+        }
+
+
         boolean isNewUser = false;
 
         if (user == null) {

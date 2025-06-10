@@ -75,8 +75,6 @@ public class CatFeatureServiceImpl implements ICatFeatureService {
                 .map(doc -> CatFeatureResponse.builder()
                         .id(doc.getId())
                         .name(doc.getString("name"))
-                        .createdBy(doc.getString("createdBy"))
-                        .createdAt(doc.getString("createdAt"))
                         .build())
                 .distinct() // opcional, si quieres eliminar duplicados
                 .collect(Collectors.toList());

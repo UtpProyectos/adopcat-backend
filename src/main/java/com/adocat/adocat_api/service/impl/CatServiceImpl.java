@@ -1,12 +1,13 @@
 package com.adocat.adocat_api.service.impl;
 
 import com.adocat.adocat_api.api.dto.cat.*;
+import com.adocat.adocat_api.api.dto.organization.OrganizationResponse;
 import com.adocat.adocat_api.api.dto.user.UserResponse;
-import com.adocat.adocat_api.config.CloudinaryService;
+import com.adocat.adocat_api.config.S3Service;
 import com.adocat.adocat_api.domain.entity.Cat;
 import com.adocat.adocat_api.domain.entity.User;
 import com.adocat.adocat_api.domain.entity.Organization;
-import com.adocat.adocat_api.domain.repository.AdoptionRequestRepository;
+import com.adocat.adocat_api.domain.repository.AdoptionRepository;
 import com.adocat.adocat_api.domain.repository.CatRepository;
 import com.adocat.adocat_api.domain.repository.UserRepository;
 import com.adocat.adocat_api.domain.repository.OrganizationRepository;
@@ -36,8 +37,8 @@ public class CatServiceImpl implements ICatService {
     private final CatRepository catRepository;
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
-    private final AdoptionRequestRepository adoptionRequestRepository;
-    private final CloudinaryService cloudinaryService;
+    private final AdoptionRepository adoptionRequestRepository;
+    private final S3Service s3Service;
     private final ICatFeatureService catFeatureService;
     private final CatImageServiceImpl catImageServiceImpl;
 
@@ -68,7 +69,7 @@ public class CatServiceImpl implements ICatService {
     public CatResponse createCat(CatRequest catRequest, MultipartFile file) {
         // 1. Subir imagen si llega archivo
         if (file != null && !file.isEmpty()) {
-            String imageUrl = cloudinaryService.uploadFile(file, "cats");
+            String imageUrl = s3Service.uploadFile(file, "cats");
             catRequest.setMainImageUrl(imageUrl);
         }
 
@@ -118,7 +119,7 @@ public class CatServiceImpl implements ICatService {
     public CatResponse updateCat(UUID catId, CatRequest catRequest, MultipartFile file) {
         // Subir imagen si llega archivo
         if (file != null && !file.isEmpty()) {
-            String imageUrl = cloudinaryService.uploadFile(file, "cats");
+            String imageUrl = s3Service.uploadFile(file, "cats");
             catRequest.setMainImageUrl(imageUrl);
         }
 
@@ -191,7 +192,7 @@ public class CatServiceImpl implements ICatService {
             String folder = "cats/" + catId.toString() + "/photos";
 
             // Subir la imagen comprimida (Cloudinary comprime automáticamente imágenes)
-            String uploadedUrl = cloudinaryService.uploadFile(imageFile, folder);
+            String uploadedUrl = s3Service.uploadFile(imageFile, folder);
 
             // Guardar URL en Firebase Firestore en subcolección "photos"
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -266,7 +267,8 @@ public class CatServiceImpl implements ICatService {
                 .publishedAt(cat.getPublishedAt())
                 .mainImageUrl(cat.getMainImageUrl())
                 .createdBy(mapUserToUserResponse(cat.getCreatedBy()))
-                .organizationId(cat.getOrganization() != null ? cat.getOrganization().getOrganizationId() : null)
+                .organization(OrganizationResponse.builder().name(cat.getOrganization().getName()).build()
+                )
                 .sentToOrg(cat.getSentToOrg() != null ? cat.getSentToOrg().getOrganizationId() : null)
                 .adoptedBy(cat.getAdoptedBy() != null ? cat.getAdoptedBy().getUserId() : null)
                 .adoptedAt(cat.getAdoptedAt())

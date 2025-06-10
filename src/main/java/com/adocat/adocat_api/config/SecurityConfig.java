@@ -34,9 +34,11 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/cats", "/api/cats/{id}").permitAll() //
                         .requestMatchers("/api/users/me").authenticated() // común
-                        .requestMatchers("/api/users/**").hasAnyRole("ADOPTANTE","ADMIN")
-                        .requestMatchers("/api/cats/**").hasAnyRole("ADOPTANTE","ADMIN")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADOPTANTE","ADMIN","RESCATISTA")
+                        .requestMatchers("/api/cats/**").hasAnyRole("ADOPTANTE","ADMIN","RESCATISTA")
+                        .requestMatchers("/api/adoptions/**").hasAnyRole("ADOPTANTE","ADMIN","RESCATISTA")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -63,7 +65,7 @@ public class SecurityConfig {
                 registry.addMapping("/**")
                         .allowedOrigins(viteUrl)
                         //.allowedOrigins(viteUrl)
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }

@@ -19,6 +19,8 @@ public interface IOrganizationService {
 
     List<OrganizationResponse> getAllOrganizations();
 
+    List<OrganizationResponse> getOrganizationsByUserId(UUID userId);
+
     OrganizationResponse updateOrganizationStatus(UUID organizationId, Organization.OrganizationStatus status, Boolean verified);
 
     OrganizationResponse updateOrganizationState(UUID organizationId, Boolean active);

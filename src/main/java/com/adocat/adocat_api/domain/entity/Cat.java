@@ -89,7 +89,7 @@ public class Cat implements Serializable {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "adoption_request_id", nullable = true)
-    private AdoptionRequest adoptionRequest;
+    private Adoption adoptionRequest;
 
     public enum CatStatus {
         AVAILABLE, // El gato está disponible para adopción
