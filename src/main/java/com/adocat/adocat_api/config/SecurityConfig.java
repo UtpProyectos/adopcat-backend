@@ -35,10 +35,28 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/cats", "/api/cats/{id}").permitAll() //
+
+                        // 📦 Catálogo público
+                        .requestMatchers("/api/products", "/api/products/{id}").permitAll()
+
+                        // 🛠️ Gestión de productos (admin)
+                        .requestMatchers("/api/products/**").hasRole("ADMIN")
+                        .requestMatchers("/api/product-categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/product-suppliers/**").hasRole("ADMIN")
+
+                        // 🛒 Checkout solo adoptante
+                        .requestMatchers("/api/orders/**").hasRole("ADOPTANTE")
+
+                        // 🧾 Order items (solo admin si deseas)
+                        .requestMatchers("/api/order-items/**").hasRole("ADMIN")
+
+                        // 🧍 Acceso general
                         .requestMatchers("/api/users/me").authenticated() // común
                         .requestMatchers("/api/users/**").hasAnyRole("ADOPTANTE","ADMIN","RESCATISTA")
                         .requestMatchers("/api/cats/**").hasAnyRole("ADOPTANTE","ADMIN","RESCATISTA")
                         .requestMatchers("/api/adoptions/**").hasAnyRole("ADOPTANTE","ADMIN","RESCATISTA")
+
+                        // 🔐 Todo lo demás necesita login
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
