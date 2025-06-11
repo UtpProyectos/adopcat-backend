@@ -8,4 +8,6 @@ import java.util.UUID;
 public class OrderItemRequest {
     private UUID productId;
     private Integer quantity;
+    private String name;
+
 }

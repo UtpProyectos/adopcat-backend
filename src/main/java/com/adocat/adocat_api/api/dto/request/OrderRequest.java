@@ -6,7 +6,11 @@ import java.util.List;
 
 @Data
 public class OrderRequest {
+    private String fullName;
+    private String email;
+    private String phone;
     private String shippingAddress;
     private String paymentMethod;
     private List<OrderItemRequest> items;
+    private double total;
 }
