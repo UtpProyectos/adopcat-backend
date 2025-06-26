@@ -39,13 +39,18 @@ public class SecurityConfig {
                         // 📦 Catálogo público
                         .requestMatchers("/api/products", "/api/products/{id}").permitAll()
 
+                        // ✅ EXCEPCIÓN para prueba de correo
+                        .requestMatchers("/api/orders/test-email").permitAll()
+
                         // 🛠️ Gestión de productos (admin)
                         .requestMatchers("/api/products/**").hasRole("ADMIN")
                         .requestMatchers("/api/product-categories/**").hasRole("ADMIN")
                         .requestMatchers("/api/product-suppliers/**").hasRole("ADMIN")
 
                         // 🛒 Checkout solo adoptante
-                        .requestMatchers("/api/orders/**").hasRole("ADOPTANTE")
+                                .requestMatchers("/api/orders").permitAll()
+// O si necesitas autenticación:
+                                .requestMatchers("/api/orders").hasRole("ADOPTANTE")
 
                         // 🧾 Order items (solo admin si deseas)
                         .requestMatchers("/api/order-items/**").hasRole("ADMIN")

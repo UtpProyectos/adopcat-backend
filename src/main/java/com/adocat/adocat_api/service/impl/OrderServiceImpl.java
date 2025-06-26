@@ -1,8 +1,9 @@
 package com.adocat.adocat_api.service.impl;
 
-import com.adocat.adocat_api.api.dto.request.OrderRequest;
 import com.adocat.adocat_api.api.dto.request.OrderItemRequest;
+import com.adocat.adocat_api.api.dto.request.OrderRequest;
 import com.adocat.adocat_api.api.dto.response.OrderResponse;
+import com.adocat.adocat_api.config.MailService;
 import com.adocat.adocat_api.domain.entity.Order;
 import com.adocat.adocat_api.domain.entity.OrderItem;
 import com.adocat.adocat_api.domain.entity.User;
@@ -16,9 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +26,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final MailService mailService;
 
     @Override
     @Transactional
@@ -34,14 +34,21 @@ public class OrderServiceImpl implements OrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        BigDecimal shippingCost = BigDecimal.valueOf(10.00); // fijo o calculable
+        BigDecimal shippingCost = BigDecimal.valueOf(10.00);
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         List<OrderItem> items = new ArrayList<>();
 
         for (OrderItemRequest itemReq : request.getItems()) {
-            var product = productRepository.findById(itemReq.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+            UUID productUuid;
+            try {
+                productUuid = UUID.fromString(itemReq.getProductId());
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("❌ ID de producto inválido: " + itemReq.getProductId(), e);
+            }
+
+            var product = productRepository.findById(productUuid)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + productUuid));
 
             BigDecimal price = product.getPrice();
             BigDecimal discount = product.getDiscountPct() != null ? product.getDiscountPct() : BigDecimal.ZERO;
@@ -71,16 +78,31 @@ public class OrderServiceImpl implements OrderService {
                 .status("Recibido")
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-                .items(new ArrayList<>()) // temporal, se setea abajo
+                .items(new ArrayList<>())
                 .build();
 
-        // Asociar ítems con la orden antes de guardar
         for (OrderItem item : items) {
             item.setOrder(order);
         }
         order.setItems(items);
 
-        return new OrderResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("name", request.getFullName());
+        variables.put("email", request.getEmail());
+        variables.put("phone", request.getPhone());
+        variables.put("items", request.getItems());
+        variables.put("total", request.getTotal());
+
+        mailService.sendHtmlEmail(
+                request.getEmail(),
+                "\uD83D\uDCCE Confirmaci\u00f3n de tu pedido en AdoCat",
+                "order-confirmation",
+                variables
+        );
+
+        return new OrderResponse(savedOrder);
     }
 
     @Override
