@@ -41,7 +41,7 @@ public class OrderController {
     public OrderResponse getOrder(@PathVariable UUID id) {
         return orderService.getOrderById(id);
     }
-
+    /*
     // 🧪 Prueba de envío de correo
     @PostMapping("/test-email")
     public ResponseEntity<Void> testOrderEmail() {
@@ -56,12 +56,12 @@ public class OrderController {
         OrderItemRequest item1 = new OrderItemRequest();
         item1.setName("Collar Antipulgas");
         item1.setQuantity(1);
-        item1.setProductId(UUID.randomUUID().toString());
+        item1.setProductId(UUID.randomUUID().toString()); // ✅ Convertir UUID a String
 
         OrderItemRequest item2 = new OrderItemRequest();
         item2.setName("Juguete Ratón");
         item2.setQuantity(2);
-        item2.setProductId(UUID.randomUUID().toString());
+        item2.setProductId(UUID.randomUUID().toString()); // ✅ Convertir UUID a String
 
         request.setItems(List.of(item1, item2));
 
@@ -81,11 +81,11 @@ public class OrderController {
 
         return ResponseEntity.ok().build();
     }
-
-    // ✅ Corrección: el JWT contiene el email (no UUID), lo buscamos por email
+    */
+    // 🔐 Extrae el UUID del usuario autenticado por su email en el token
     private UUID extractUserId(Authentication authentication) {
-        String email = authentication.getName(); // el JWT sub es el email
-        return userRepository.findByEmailWithRole(email)
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
                 .getUserId();
     }

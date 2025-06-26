@@ -79,6 +79,16 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public ProductResponse updateVisibility(UUID id, boolean visible) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        product.setIsActive(visible);
+
+        return new ProductResponse(productRepository.save(product));
+    }
+
+    @Override
     public void deleteProduct(UUID id) {
         productRepository.deleteById(id);
     }

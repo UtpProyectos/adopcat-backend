@@ -1,6 +1,7 @@
 package com.adocat.adocat_api.api.controller;
 
 import com.adocat.adocat_api.api.dto.request.ProductRequest;
+import com.adocat.adocat_api.api.dto.request.VisibilityUpdateRequest;
 import com.adocat.adocat_api.api.dto.response.ProductResponse;
 import com.adocat.adocat_api.service.interfaces.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,11 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable UUID id) {
         productService.deleteProduct(id);
+    }
+
+    // 🔁 NUEVO: Cambiar visibilidad (mostrar en catálogo o no)
+    @PatchMapping("/{id}/visibility")
+    public ProductResponse updateVisibility(@PathVariable UUID id, @RequestBody VisibilityUpdateRequest request) {
+        return productService.updateVisibility(id, request.isVisible());
     }
 }

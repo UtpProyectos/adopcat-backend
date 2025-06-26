@@ -11,5 +11,6 @@ public interface ProductService {
     List<ProductResponse> getAllProducts();
     ProductResponse getProductById(UUID id);
     ProductResponse updateProduct(UUID id, ProductRequest request);
+    ProductResponse updateVisibility(UUID id, boolean visible);
     void deleteProduct(UUID id);
 }
